@@ -436,6 +436,8 @@ Documentation
 - 📖 **Contributor Guide**: https://docs.openstack.org/kolla/latest/contributor/
 - ❓ **FAQ**: `FAQ.md <FAQ.md>`_
 - 📝 **Changelog**: `CHANGELOG.md <CHANGELOG.md>`_
+- 🎯 **Image Size Optimization**: `docs/source/image-size-optimization.md <docs/source/image-size-optimization.md>`_
+- 🏗️ **Multi-Architecture Guide**: `docs/source/multi-arch.md <docs/source/multi-arch.md>`_
 
 Communication Channels
 ----------------------

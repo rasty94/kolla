@@ -396,26 +396,65 @@ sudo setsebool -P container_manage_cgroup true
 
 ### Images are too large
 
-**Solution 1: Use binary type**
+Kolla images can be optimized to reduce size by 20-40% typically.
+
+**Quick Wins:**
 
 ```bash
-kolla-build --type binary  # Smaller than source builds
+# Use binary type (faster, smaller)
+kolla-build --type binary
+
+# Check current sizes
+make image-sizes
+
+# Analyze specific image
+make analyze-image  # Requires dive tool
 ```
 
-**Solution 2: Remove unnecessary packages**
+**Solution 1: Use optimized template override**
 
 ```jinja2
+{% extends parent_template %}
+
 {% block {{ image_name }}_footer %}
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Comprehensive cleanup
+RUN apt-get purge -y --auto-remove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/doc/* /usr/share/man/* \
+    && find /var -type f -name '*.log' -delete \
+    && find /usr -type d -name '__pycache__' -exec rm -rf {} + \
+    && find /usr -type f -name '*.py[co]' -delete
 {% endblock %}
 ```
 
-**Solution 3: Use distroless or minimal base images**
+**Solution 2: Use new cleanup macros**
 
-```ini
-[DEFAULT]
-base_image = ubuntu:24.04-minimal
+```jinja2
+{% import "macros.j2" as macros with context %}
+
+RUN {{ macros.install_packages(packages) }} \
+    && {{ macros.cleanup_comprehensive() }}
 ```
+
+**Solution 3: Analyze and optimize**
+
+```bash
+# Install dive for layer analysis
+wget https://github.com/wagoodman/dive/releases/download/v0.12.0/dive_0.12.0_linux_amd64.deb
+sudo dpkg -i dive_0.12.0_linux_amd64.deb
+
+# Analyze image
+dive kolla/nova-compute:latest
+```
+
+**Expected Savings:**
+
+- Binary vs Source: 20-30% smaller
+- With cleanup: Additional 15-25%
+- Total potential: 35-55% reduction
+
+See the comprehensive [Image Size Optimization Guide](docs/source/image-size-optimization.md) for detailed strategies.
 
 ### How do I debug build failures?
 
@@ -680,6 +719,76 @@ While Kolla images are designed for Kolla-Ansible deployment, they can be used w
 3. **Consider using:**
    - [OpenStack-Helm](https://github.com/openstack/openstack-helm)
    - Custom operators
+
+### How do I optimize image sizes?
+
+Kolla provides several tools and techniques for reducing image sizes:
+
+**1. Analyze current sizes:**
+
+```bash
+# Show all Kolla image sizes
+make image-sizes
+
+# Total size of all images
+make total-image-size
+
+# Analyze specific image layers
+make analyze-image  # Interactive - requires dive
+```
+
+**2. Build with optimizations:**
+
+```bash
+# Use binary type (20-30% smaller)
+kolla-build --type binary
+
+# Use template override for cleanup
+kolla-build --template-override contrib/template-override/size-optimized.j2
+```
+
+**3. Use new cleanup macros:**
+
+```jinja2
+{% import "macros.j2" as macros with context %}
+
+{# In your template override #}
+RUN {{ macros.cleanup_comprehensive() }}
+```
+
+**4. Compare before/after:**
+
+```bash
+# Build with and without optimization
+kolla-build nova --tag before
+kolla-build nova --tag after --template-override optimized.j2
+
+# Compare
+make compare-images
+# Enter: kolla/nova-compute:before and kolla/nova-compute:after
+```
+
+**Available cleanup macros:**
+
+- `{{ macros.cleanup_python_cache() }}` - Remove `__pycache__`, `.pyc` files
+- `{{ macros.cleanup_docs() }}` - Remove docs, man pages
+- `{{ macros.cleanup_logs() }}` - Remove log files
+- `{{ macros.cleanup_comprehensive() }}` - All of the above
+
+**Expected Results:**
+
+- Binary builds: 20-30% smaller than source
+- With cleanup: Additional 15-25% reduction
+- Total potential: 35-55% size reduction
+
+**Learn More:**
+
+See the comprehensive [Image Size Optimization Guide](docs/source/image-size-optimization.md) with:
+- Detailed optimization techniques
+- Layer-by-layer analysis
+- Multi-stage build examples
+- Tool integration (dive, docker-slim)
+- Benchmarks and case studies
 
 ---
 

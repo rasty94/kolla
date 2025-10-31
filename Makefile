@@ -239,3 +239,37 @@ info:  ## Show project information
 	@echo "Current directory: $(shell pwd)"
 	@echo ""
 	@echo "Run 'make help' for available commands"
+
+# Image analysis and optimization targets
+
+analyze-image:  ## Analyze image size with dive
+	@if ! command -v dive &> /dev/null; then \
+		echo "❌ dive not installed"; \
+		echo "Install: wget https://github.com/wagoodman/dive/releases/download/v0.12.0/dive_0.12.0_linux_amd64.deb && sudo dpkg -i dive_0.12.0_linux_amd64.deb"; \
+		exit 1; \
+	fi
+	@read -p "Enter image name (e.g., kolla/nova-compute:latest): " image; \
+	dive $$image
+
+image-sizes:  ## Show sizes of all Kolla images
+	@echo "Kolla Image Sizes:"
+	@docker images 'kolla/*' --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | sort -k3 -h || echo "No Kolla images found"
+
+image-layers:  ## Show layer information for an image
+	@read -p "Enter image name (e.g., kolla/nova-compute:latest): " image; \
+	echo "Layer history for $$image:"; \
+	docker history $$image --no-trunc
+
+image-inspect:  ## Inspect image details (JSON)
+	@read -p "Enter image name (e.g., kolla/nova-compute:latest): " image; \
+	docker inspect $$image | jq '.[0] | {Size: .Size, Created: .Created, Architecture: .Architecture, Os: .Os, Layers: .RootFS.Layers | length}'
+
+compare-images:  ## Compare sizes between two images
+	@read -p "Enter first image (e.g., kolla/nova-compute:old): " image1; \
+	read -p "Enter second image (e.g., kolla/nova-compute:new): " image2; \
+	echo "Size comparison:"; \
+	docker images $$image1 $$image2 --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+total-image-size:  ## Calculate total size of all Kolla images
+	@echo "Total size of all Kolla images:"
+	@docker images 'kolla/*' --format "{{.Size}}" | sed 's/GB/*1024/;s/MB//;s/KB/\/1024/' | paste -sd+ | bc | awk '{printf "%.2f GB\n", $$1/1024}'

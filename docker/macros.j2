@@ -42,6 +42,27 @@
 {%- endif -%}
 {% endmacro %}
 
+{% macro cleanup_python_cache() -%}
+find /usr -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr -type f -name '*.py[co]' -delete 2>/dev/null || true
+{%- endmacro %}
+
+{% macro cleanup_docs() -%}
+rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* 2>/dev/null || true
+{%- endmacro %}
+
+{% macro cleanup_logs() -%}
+find /var -type f -name '*.log' -delete 2>/dev/null || true \
+    && find /tmp -type f -delete 2>/dev/null || true
+{%- endmacro %}
+
+{% macro cleanup_comprehensive() -%}
+{# Comprehensive cleanup for maximum size reduction #}
+{{ cleanup_python_cache() }} \
+    && {{ cleanup_docs() }} \
+    && {{ cleanup_logs() }}
+{%- endmacro %}
+
 {% macro configure_user(name, groups=None, shell=None, homedir=None) %}
 {%- if name not in users %}
 {{ raise_error("Failed to find configuration for '" + name + "' user. Try specifying '" + name + "-user' config section.") }}
