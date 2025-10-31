@@ -5,6 +5,26 @@ Kolla Overview
 .. image:: https://governance.openstack.org/tc/badges/kolla.svg
     :target: https://governance.openstack.org/tc/reference/tags/index.html
 
+.. image:: https://github.com/rasty94/kolla/workflows/Tests/badge.svg
+    :target: https://github.com/rasty94/kolla/actions/workflows/tests.yml
+    :alt: Tests Status
+
+.. image:: https://github.com/rasty94/kolla/workflows/Linting/badge.svg
+    :target: https://github.com/rasty94/kolla/actions/workflows/linting.yml
+    :alt: Linting Status
+
+.. image:: https://github.com/rasty94/kolla/workflows/Security/badge.svg
+    :target: https://github.com/rasty94/kolla/actions/workflows/security.yml
+    :alt: Security Status
+
+.. image:: https://codecov.io/gh/rasty94/kolla/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/rasty94/kolla
+    :alt: Code Coverage
+
+.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit
+    :target: https://github.com/pre-commit/pre-commit
+    :alt: Pre-commit Enabled
+
 .. Change things from this point on
 
 
