@@ -40,17 +40,17 @@ jobs:
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "Version: ${VERSION}"
       
       - name: Check if pre-release
         id: check-prerelease
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
-          if [[ "$VERSION" =~ (rc|b|a) ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          if [[ "${VERSION}" =~ (rc|b|a) ]]; then
+            echo "is_prerelease=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> "${GITHUB_OUTPUT}"
           fi
 
   build-package:
@@ -123,8 +123,8 @@ jobs:
           {
             echo 'notes<<EOF'
             cat release-notes.txt
-            echo EOF
-          } >> $GITHUB_OUTPUT
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
       
       - name: Upload release notes
         uses: actions/upload-artifact@v4
@@ -152,7 +152,7 @@ jobs:
           name: release-notes
       
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ needs.validate-version.outputs.version }}
           body_path: release-notes.txt
@@ -193,10 +193,12 @@ jobs:
     steps:
       - name: Release Summary
         run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.validate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Pre-release:** ${{ needs.validate-version.outputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ needs.create-github-release.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Release available at: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Release Summary"
+            echo ""
+            echo "**Version:** ${{ needs.validate-version.outputs.version }}"
+            echo "**Pre-release:** ${{ needs.validate-version.outputs.is_prerelease }}"
+            echo "**Status:** ${{ needs.create-github-release.result }}"
+            echo ""
+            echo "Release available at: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-version.outputs.version }}"
+          } >> "${GITHUB_STEP_SUMMARY}"

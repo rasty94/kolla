@@ -84,7 +84,7 @@ jobs:
       
       - name: Check RST files
         run: |
-          find . -name "*.rst" -not -path "./doc/build/*" -not -path "./.tox/*" | xargs rstcheck --report-level warning || true
+          find . -name "*.rst" -not -path "./doc/build/*" -not -path "./.tox/*" -print0 | xargs -0 rstcheck --report-level warning || true
 
   check-links:
     name: Check External Links

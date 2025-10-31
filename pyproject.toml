@@ -76,7 +76,7 @@ include = ["kolla*"]
 exclude = ["tests*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pbr.version.VersionInfo('kolla').version_string()"}
+version = {attr = "kolla.version.__version__"}
 
 [tool.pbr]
 skip_git_sdist = false
