@@ -1,0 +1,301 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate configuration for Kolla - OpenStack container deployment",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":combinePatchMinorReleases"
+  ],
+  "timezone": "UTC",
+  "schedule": [
+    "before 3am on Monday"
+  ],
+  "labels": [
+    "dependencies",
+    "automated"
+  ],
+  "assignees": [],
+  "reviewers": [],
+  "prConcurrentLimit": 5,
+  "prCreation": "immediate",
+  "prHourlyLimit": 2,
+  "updateNotScheduled": false,
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "🤖 Dependency Updates Dashboard",
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "separateMinorPatch": false,
+  "ignoreDeps": [],
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security",
+      "dependencies"
+    ],
+    "assignees": [],
+    "reviewers": []
+  },
+  "packageRules": [
+    {
+      "description": "Auto-merge patch updates for Python packages",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "matchManagers": [
+        "pip_requirements"
+      ]
+    },
+    {
+      "description": "Auto-merge minor updates for well-tested packages",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "matchPackageNames": [
+        "setuptools",
+        "GitPython",
+        "docker"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Group OpenStack oslo packages together",
+      "matchPackagePatterns": [
+        "^oslo\\."
+      ],
+      "groupName": "OpenStack Oslo libraries",
+      "groupSlug": "oslo-libs",
+      "schedule": [
+        "before 3am on Monday"
+      ]
+    },
+    {
+      "description": "Group testing packages together",
+      "matchPackageNames": [
+        "pytest",
+        "coverage",
+        "stestr",
+        "testtools",
+        "oslotest",
+        "ddt"
+      ],
+      "groupName": "Testing dependencies",
+      "groupSlug": "test-deps",
+      "schedule": [
+        "before 3am on Monday"
+      ]
+    },
+    {
+      "description": "Group linting and code quality tools together",
+      "matchPackageNames": [
+        "flake8",
+        "hacking",
+        "bandit",
+        "bashate",
+        "ansible-lint"
+      ],
+      "groupName": "Linting and code quality",
+      "groupSlug": "linting",
+      "schedule": [
+        "before 3am on Monday"
+      ]
+    },
+    {
+      "description": "Group Ansible packages together",
+      "matchPackagePatterns": [
+        "^ansible"
+      ],
+      "groupName": "Ansible dependencies",
+      "groupSlug": "ansible",
+      "schedule": [
+        "before 3am on Monday"
+      ]
+    },
+    {
+      "description": "Require manual approval for major updates",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "major-update",
+        "requires-review"
+      ],
+      "reviewers": []
+    },
+    {
+      "description": "High priority for security updates",
+      "matchDatasources": [
+        "pypi"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "vulnerabilitySeverity": [
+        "critical",
+        "high"
+      ],
+      "labels": [
+        "security",
+        "priority-high"
+      ],
+      "prPriority": 10,
+      "schedule": [
+        "at any time"
+      ]
+    },
+    {
+      "description": "Pin pbr to stable versions only",
+      "matchPackageNames": [
+        "pbr"
+      ],
+      "automerge": false,
+      "labels": [
+        "pbr-update"
+      ]
+    },
+    {
+      "description": "Be careful with Jinja2 updates (template compatibility)",
+      "matchPackageNames": [
+        "Jinja2"
+      ],
+      "automerge": false,
+      "labels": [
+        "templates",
+        "requires-testing"
+      ]
+    },
+    {
+      "description": "Update GitHub Actions automatically",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "labels": [
+        "github-actions"
+      ]
+    },
+    {
+      "description": "Update Dockerfile base images carefully",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "automerge": false,
+      "labels": [
+        "docker",
+        "requires-testing"
+      ],
+      "schedule": [
+        "before 3am on Monday"
+      ]
+    }
+  ],
+  "pip_requirements": {
+    "fileMatch": [
+      "^requirements\\.txt$",
+      "^test-requirements\\.txt$",
+      "^doc/requirements\\.txt$"
+    ]
+  },
+  "dockerfile": {
+    "enabled": true
+  },
+  "docker-compose": {
+    "enabled": true
+  },
+  "github-actions": {
+    "enabled": true,
+    "fileMatch": [
+      "^\\.github/workflows/[^/]+\\.ya?ml$"
+    ]
+  },
+  "ansible": {
+    "enabled": true,
+    "fileMatch": [
+      "^test-requirements\\.ya?ml$"
+    ]
+  },
+  "pre-commit": {
+    "enabled": true
+  },
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{#if newValue}}{{{newValue}}}{{else}}{{{newDigestShort}}}{{/if}}{{/if}}{{/if}}{{/if}}",
+  "commitMessageSuffix": "",
+  "prTitle": "{{commitMessagePrefix}} {{commitMessageAction}} {{commitMessageTopic}} {{commitMessageExtra}}{{commitMessageSuffix}}",
+  "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}",
+  "prBodyColumns": [
+    "Package",
+    "Change",
+    "Age",
+    "Adoption",
+    "Passing",
+    "Confidence"
+  ],
+  "prBodyDefinitions": {
+    "Age": "[![age](https://developer.mend.io/api/mc/badges/age/{{datasource}}/{{replace '/' '%2f' depName}}/{{newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/)",
+    "Adoption": "[![adoption](https://developer.mend.io/api/mc/badges/adoption/{{datasource}}/{{replace '/' '%2f' depName}}/{{newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/)",
+    "Passing": "[![passing](https://developer.mend.io/api/mc/badges/compatibility/{{datasource}}/{{replace '/' '%2f' depName}}/{{currentVersion}}/{{newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/)",
+    "Confidence": "[![confidence](https://developer.mend.io/api/mc/badges/confidence/{{datasource}}/{{replace '/' '%2f' depName}}/{{currentVersion}}/{{newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/)"
+  },
+  "lockFileMaintenance": {
+    "enabled": false,
+    "schedule": [
+      "before 3am on the first day of the month"
+    ]
+  },
+  "rangeStrategy": "bump",
+  "respectLatest": true,
+  "followTag": "latest",
+  "ignoreUnstable": true,
+  "ignorePrAuthor": false,
+  "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+  "platform": "github",
+  "onboarding": true,
+  "onboardingConfig": {
+    "extends": [
+      "config:recommended"
+    ]
+  },
+  "requireConfig": "optional",
+  "customManagers": [
+    {
+      "description": "Update Python version in Dockerfile",
+      "customType": "regex",
+      "fileMatch": [
+        "^docker/.*/Dockerfile.*$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+.*?:(?<currentValue>.*)\\s"
+      ]
+    },
+    {
+      "description": "Update versions in setup.cfg",
+      "customType": "regex",
+      "fileMatch": [
+        "^setup\\.cfg$"
+      ],
+      "matchStrings": [
+        "python_requires = >=(?<currentValue>.*?)\\s"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "python-version"
+    }
+  ],
+  "hostRules": [],
+  "force": {
+    "constraints": {}
+  }
+}
