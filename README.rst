@@ -115,6 +115,29 @@ Quick Start
 For more detailed instructions, see our `FAQ <FAQ.md>`__ and
 `Documentation <https://docs.openstack.org/kolla/latest/>`__.
 
+Developer Quick Start
+---------------------
+
+For contributors, use the included ``Makefile`` for common development tasks::
+
+    # Install development environment
+    make install-dev
+
+    # Run tests
+    make test
+
+    # Run linters
+    make lint
+
+    # Build images
+    make build
+
+    # See all available commands
+    make help
+
+The project uses modern Python packaging with ``pyproject.toml`` and includes
+``.editorconfig`` for consistent code style across different editors and IDEs.
+
 The Kolla Repository
 ====================
 

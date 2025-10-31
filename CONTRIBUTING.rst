@@ -37,14 +37,19 @@ Kolla contributor guide:
       git clone https://opendev.org/openstack/kolla
       cd kolla
 
-      # Install in development mode
-      pip install -e .
+      # Quick setup using Makefile
+      make install-dev
 
-      # Install development dependencies
-      pip install -r test-requirements.txt
+   Or manually::
+
+      # Install in development mode with all dependencies
+      pip install -e ".[dev,test,docs,lint]"
 
       # Install pre-commit hooks
       pre-commit install
+
+   **Note**: The project now uses ``pyproject.toml`` for modern Python packaging.
+   All configuration is centralized in this file following PEP 517/518/621 standards.
 
 2. **Create a Feature Branch**
    ::
@@ -66,7 +71,22 @@ Kolla contributor guide:
    - Update documentation as needed
 
 4. **Test Your Changes**
-   ::
+
+   Using Makefile (recommended)::
+
+      # Run all tests
+      make test
+
+      # Run only linting
+      make lint
+
+      # Run tests with coverage
+      make coverage
+
+      # Quick check (lint + unit tests)
+      make test-quick
+
+   Or using tox directly::
 
       # Run unit tests
       tox -e py311
@@ -77,7 +97,12 @@ Kolla contributor guide:
       # Run specific tests
       tox -e py311 -- tests/test_build.py
 
-      # Build a test image
+   Build test images::
+
+      # Using Makefile
+      make build-nova
+
+      # Or directly
       kolla-build --debug nova
 
 5. **Commit Your Changes**
@@ -118,8 +143,44 @@ Kolla contributor guide:
 Running Tests Locally
 ---------------------
 
+**Quick Reference - Using Makefile:**
+
+The project includes a comprehensive ``Makefile`` with common development tasks::
+
+   # Show all available commands
+   make help
+
+   # Run all tests
+   make test
+
+   # Run linters
+   make lint
+
+   # Run tests with coverage
+   make coverage
+
+   # Auto-format code
+   make format
+
+   # Build images
+   make build-core
+
+See ``make help`` for the complete list of targets.
+
 **Unit Tests:**
-::
+
+Using Makefile::
+
+   # Run all tests
+   make test
+
+   # Run unit tests only
+   make test-unit
+
+   # Run with coverage
+   make coverage
+
+Or using tox::
 
    # Run all tests
    tox -e py311
@@ -131,7 +192,19 @@ Running Tests Locally
    pytest tests/test_build.py
 
 **Linting:**
-::
+
+Using Makefile (recommended)::
+
+   # Run all linters
+   make lint
+
+   # Auto-fix lint issues
+   make lint-fix
+
+   # Format code with ruff
+   make format
+
+Or using tox::
 
    # Python linting
    tox -e pep8
@@ -375,6 +448,15 @@ Communication Channels
 Development Tools
 -----------------
 
+Project Configuration:
+
+- **pyproject.toml**: Modern Python packaging configuration (PEP 517/518/621)
+- **.editorconfig**: Editor settings for consistent code style across IDEs
+- **Makefile**: Common development tasks (``make help`` for all commands)
+- **.pre-commit-config.yaml**: Pre-commit hooks for code quality
+
+External Services:
+
 - **Gerrit**: https://review.opendev.org/
 - **Zuul CI**: https://zuul.opendev.org/
 - **Launchpad**: https://launchpad.net/kolla
@@ -396,13 +478,15 @@ All contributors are recognized in our:
 Before submitting, ensure:
 
 - [ ] Code follows PEP 8 style guidelines
-- [ ] All tests pass locally (``tox -e py311,pep8``)
+- [ ] All tests pass locally (``make test`` or ``tox -e py311,pep8``)
+- [ ] Linters pass (``make lint`` or ``tox -e pep8``)
 - [ ] New functionality includes tests
 - [ ] Documentation is updated
 - [ ] Commit message follows guidelines
 - [ ] Change-Id is present in commit message
-- [ ] Pre-commit hooks pass
+- [ ] Pre-commit hooks pass (``make pre-commit``)
 - [ ] No secrets or credentials in code
+- [ ] .editorconfig settings respected (automatic in most IDEs)
 
 🎓 Learning Resources
 ======================
