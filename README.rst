@@ -25,6 +25,26 @@ Kolla Overview
     :target: https://github.com/pre-commit/pre-commit
     :alt: Pre-commit Enabled
 
+.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+    :target: https://www.apache.org/licenses/LICENSE-2.0
+    :alt: License
+
+.. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
+    :target: https://www.python.org/downloads/
+    :alt: Python Versions
+
+.. image:: https://img.shields.io/docker/pulls/kolla/ubuntu-binary-nova-compute
+    :target: https://hub.docker.com/u/kolla/
+    :alt: Docker Pulls
+
+.. image:: https://img.shields.io/badge/OpenStack-2025.1-orange.svg
+    :target: https://releases.openstack.org/
+    :alt: OpenStack Release
+
+.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
+    :target: https://docs.openstack.org/kolla/latest/
+    :alt: Documentation
+
 .. Change things from this point on
 
 
@@ -56,6 +76,30 @@ Learn about Kolla by reading the documentation online
 Get started by reading the `Kolla Ansible Developer
 Quickstart <https://docs.openstack.org/kolla-ansible/latest/user/quickstart.html>`__.
 
+Quick Start
+-----------
+
+1. **Install Dependencies**::
+
+    pip install kolla
+
+2. **Build Images**::
+
+    kolla-build
+
+3. **Customize Configuration**::
+
+    # Edit /etc/kolla/kolla-build.conf
+    kolla-build --base ubuntu --type binary
+
+4. **Deploy with Kolla-Ansible**::
+
+    # Follow the Kolla-Ansible quickstart guide
+    # https://docs.openstack.org/kolla-ansible/latest/user/quickstart.html
+
+For more detailed instructions, see our `FAQ <FAQ.md>`__ and
+`Documentation <https://docs.openstack.org/kolla/latest/>`__.
+
 The Kolla Repository
 ====================
 
@@ -75,7 +119,7 @@ are built by the Kolla project maintainers. A detailed process for
 contributing to the images can be found in the `image building
 guide <https://docs.openstack.org/kolla/latest/admin/image-building.html>`__.
 
-The Kolla developers build images in the `kolla` namespace for every tagged
+The Kolla developers build images in the ``kolla`` namespace for every tagged
 release.
 
 You can view the available images on `Docker Hub
@@ -195,6 +239,18 @@ workflow <https://docs.openstack.org/infra/manual/developers.html>`__.
    `meetings
    <https://docs.openstack.org/kolla/latest/contributor/meeting.html>`__.
 -  Contribute `code <https://opendev.org/openstack/kolla>`__.
+
+Resources
+=========
+
+-  📖 **Documentation**: https://docs.openstack.org/kolla/latest/
+-  ❓ **FAQ**: `Frequently Asked Questions <FAQ.md>`__
+-  📝 **Changelog**: `Release Notes <CHANGELOG.md>`__
+-  🐛 **Bug Reports**: https://bugs.launchpad.net/kolla
+-  💬 **IRC**: #openstack-kolla on OFTC
+-  📧 **Mailing List**: openstack-discuss@lists.openstack.org (tag [kolla])
+-  🎥 **Meetings**: `Weekly Meetings <https://docs.openstack.org/kolla/latest/contributor/meeting.html>`__
+-  📊 **Project Status**: https://governance.openstack.org/tc/reference/projects/kolla.html
 
 Contributors
 ============
