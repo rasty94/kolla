@@ -45,6 +45,10 @@ Kolla Overview
     :target: https://docs.openstack.org/kolla/latest/
     :alt: Documentation
 
+.. image:: https://img.shields.io/badge/arch-amd64%20%7C%20arm64-success
+    :target: https://github.com/rasty94/kolla/blob/master/docs/source/multi-arch.md
+    :alt: Multi-Architecture Support
+
 .. Change things from this point on
 
 
@@ -75,6 +79,17 @@ Learn about Kolla by reading the documentation online
 
 Get started by reading the `Kolla Ansible Developer
 Quickstart <https://docs.openstack.org/kolla-ansible/latest/user/quickstart.html>`__.
+
+Multi-Architecture Support
+---------------------------
+
+Kolla supports building and deploying container images for multiple architectures:
+
+* **AMD64/x86_64**: Traditional Intel and AMD servers
+* **ARM64/aarch64**: Apple Silicon (M1/M2/M3), AWS Graviton, and other ARM servers
+
+See the `Multi-Architecture Guide <docs/source/multi-arch.md>`__ for detailed
+information about building and using multi-architecture images.
 
 Quick Start
 -----------

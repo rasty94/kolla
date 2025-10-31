@@ -535,6 +535,57 @@ Kolla uses OpenStack's Gerrit workflow:
 
 ## Advanced Topics
 
+### Does Kolla support multiple architectures?
+
+**Yes!** Kolla supports building images for multiple CPU architectures:
+
+- **AMD64/x86_64**: Traditional Intel and AMD processors
+- **ARM64/aarch64**: Apple Silicon (M1/M2/M3), AWS Graviton, Ampere Altra
+
+**Quick Start:**
+
+```bash
+# Install QEMU for cross-compilation
+sudo apt-get install qemu-user-static
+
+# Build for ARM64 on AMD64 host
+kolla-build --base-arch aarch64 --base ubuntu
+
+# Build for multiple architectures
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64 .
+```
+
+**Benefits:**
+
+- **Apple Silicon**: Native builds on M1/M2/M3 Macs (faster development)
+- **AWS Graviton**: Better price/performance on ARM instances
+- **Mixed Clusters**: Deploy on heterogeneous hardware
+
+**CI/CD Support:**
+
+The repository includes GitHub Actions workflows for automated multi-arch builds:
+
+- Continuous builds on push/PR
+- Scheduled weekly builds
+- Multi-arch releases with manifest lists
+
+**Performance:**
+
+- Native builds: Same speed as single-arch
+- Cross-compilation: 2-3x slower (using QEMU)
+- Runtime: ARM64 often 10-30% better efficiency
+
+**Learn More:**
+
+See the comprehensive [Multi-Architecture Guide](docs/source/multi-arch.md) for:
+
+- Detailed build instructions
+- Platform-specific considerations
+- Troubleshooting common issues
+- CI/CD integration examples
+- Performance benchmarks
+
 ### How do I build with custom plugins?
 
 **Example: Custom Neutron plugin**
