@@ -1,2 +1,54 @@
+# Coverage configuration for Kolla
+# Note: Primary configuration is in pyproject.toml
+# This file is kept for backward compatibility with tools that don't support pyproject.toml
+
 [run]
-omit = kolla/tests/*
+branch = True
+source = kolla
+parallel = True
+omit =
+    */tests/*
+    */test_*.py
+    .tox/*
+    */__pycache__/*
+    */site-packages/*
+    kolla/tests/*
+
+[paths]
+source =
+    kolla/
+    .tox/*/lib/python*/site-packages/kolla/
+
+[report]
+# Minimum required coverage: 80%
+fail_under = 80.0
+precision = 2
+show_missing = True
+skip_covered = False
+skip_empty = True
+sort = Cover
+
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    except ImportError:
+    \.\.\.
+
+[html]
+directory = htmlcov
+show_contexts = True
+
+[xml]
+output = coverage.xml
+
+[json]
+output = coverage.json
+show_contexts = True

@@ -152,28 +152,55 @@ skips = [
 [tool.coverage.run]
 branch = true
 source = ["kolla"]
+parallel = true
 omit = [
     "*/tests/*",
     "*/test_*.py",
     ".tox/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+
+[tool.coverage.paths]
+source = [
+    "kolla/",
+    ".tox/*/lib/python*/site-packages/kolla/",
 ]
 
 [tool.coverage.report]
+# Minimum required coverage: 80%
+fail_under = 80.0
 ignore_errors = true
 precision = 2
 show_missing = true
+skip_covered = false
+skip_empty = true
+sort = "Cover"
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "def __str__",
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
     "@abstractmethod",
+    "@abc.abstractmethod",
+    "except ImportError:",
+    "\\.\\.\\.",
 ]
 
 [tool.coverage.html]
-directory = "cover"
+directory = "htmlcov"
+show_contexts = true
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.json]
+output = "coverage.json"
+show_contexts = true
 
 # isort configuration
 [tool.isort]
@@ -209,9 +236,28 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "-ra",
+    "-q",
     "--strict-markers",
     "--strict-config",
     "--showlocals",
+    "--tb=short",
+    "--cov=kolla",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "functional: Functional tests",
+    "slow: Slow running tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
 ]
 
 # pydocstyle configuration
