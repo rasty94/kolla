@@ -13,6 +13,8 @@ This document answers common questions about Kolla, the OpenStack container imag
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [Advanced Topics](#advanced-topics)
+- [Build Cache Optimization](#build-cache-optimization)
+- [Container Security Scanning](#container-security-scanning)
 
 ---
 
@@ -792,7 +794,196 @@ See the comprehensive [Image Size Optimization Guide](docs/source/image-size-opt
 
 ---
 
-## Still Have Questions?
+## Build Cache Optimization
+
+### What is BuildKit cache optimization?
+
+BuildKit cache optimization dramatically reduces Docker image build times by:
+
+1. **Caching package manager downloads** (apt, yum, pip, npm)
+2. **Reusing Docker layers** between builds
+3. **Persisting cache across CI/CD runs**
+
+### How much faster will builds be?
+
+**Typical improvements:**
+
+- First build: ~25 minutes
+- Cached build: ~3-5 minutes
+- **Overall improvement: 85-90% faster** ⚡
+
+### How do I use build cache?
+
+**Locally:**
+
+```bash
+# Enable BuildKit
+export DOCKER_BUILDKIT=1
+
+# Build with cache
+make build-cached
+
+# View cache stats
+make cache-stats
+```
+
+**In CI/CD:**
+
+The workflow `.github/workflows/build-cached.yml` automatically handles caching for all builds.
+
+### Do I need to configure anything?
+
+No! Configuration is automatic:
+
+1. ✅ Dockerfiles already have `# syntax=docker/dockerfile:1.4`
+2. ✅ Macros have cache mounts configured
+3. ✅ Workflow automatically manages GitHub Actions cache
+4. ✅ Just use `make build-cached` locally
+
+### What's the difference between cache types?
+
+| Type | Speed | Persistence | When Used |
+|------|-------|-------------|-----------|
+| **BuildKit mounts** | ⚡⚡⚡ | Single build | Local & CI |
+| **GitHub Actions** | ⚡⚡ | 7 days | Between CI runs |
+| **Docker layers** | ⚡⚡ | Per push | Image rebuild |
+
+### How much disk space does cache use?
+
+Typically 500MB-2GB per image. Use `make cache-stats` to check current usage.
+
+### Can I clear the cache?
+
+Yes, anytime:
+
+```bash
+make clean-cache
+```
+
+It's completely safe - just rebuilds from scratch next time.
+
+### Learn More
+
+See the comprehensive [Build Cache Optimization Guide](docs/source/build-cache.md) with:
+
+- Detailed how-it-works explanation
+- Troubleshooting guide
+- Best practices
+- Performance metrics
+- Integration with security scanning
+
+---
+
+## Container Security Scanning
+
+### What security scanning do you provide?
+
+Comprehensive multi-layer vulnerability scanning:
+
+1. **Trivy** - NVD + GitHub Advisory databases
+2. **Grype** - High-confidence vulnerability detection
+3. **SBOM** - Software Bill of Materials generation
+
+### How is security scanning triggered?
+
+Automatically on:
+
+- ✅ Daily schedule (2 AM UTC)
+- ✅ Push to master/stable/* branches
+- ✅ Pull requests
+- ✅ Manual via `make security-scan`
+
+### Where can I see scan results?
+
+Scan results appear in:
+
+1. **GitHub Security Tab** - Full vulnerability details
+2. **PR Checks** - Blocks merge if CRITICAL/HIGH found
+3. **SARIF Artifacts** - Machine-readable format
+4. **SBOM Artifacts** - Software inventory
+
+### What severity levels are scanned?
+
+All images are scanned for:
+
+- 🔴 **CRITICAL** - Immediate action required, blocks deployment
+- 🔴 **HIGH** - Important, fix before release
+- 🟡 **MEDIUM** - Plan remediation
+- 🟢 **LOW** - Monitor
+
+### How do I scan an image locally?
+
+```bash
+# Install tools
+make install-security-tools
+
+# Scan a specific image
+make scan-image
+
+# Generate SBOM
+make generate-sbom
+
+# Full security report
+make security-report
+```
+
+### What if there are false positives?
+
+Review the CVE details. If confirmed false positive:
+
+```bash
+# Skip specific CVE
+trivy image --skip-cve CVE-2024-1234 kolla/nova-compute:latest
+
+# Or configure ~/.trivy/trivy.yaml:
+skip-cves:
+  - CVE-2024-1234
+```
+
+### How should I remediate vulnerabilities?
+
+1. **Identify** the package with `make security-scan`
+2. **Update** the package in Dockerfile
+3. **Rebuild** with `make build-cached`
+4. **Rescan** with `make security-scan`
+5. **Verify** all CRITICAL/HIGH resolved
+
+### What's an SBOM and why do I need it?
+
+**SBOM = Software Bill of Materials**
+
+Contains:
+- Complete package inventory
+- Dependency tree
+- License information
+- Component versions
+
+**Use cases:**
+- Supply chain security
+- License compliance
+- Vulnerability tracking
+- Audit trails
+
+### Can I integrate with other tools?
+
+Yes! Results are in standard formats:
+
+- **SARIF** - GitHub, GitLab, other platforms
+- **SPDX/CycloneDX** - Industry standard SBOM
+- **JSON** - Custom integrations
+
+### Learn More
+
+See the comprehensive [Container Security Scanning Guide](docs/source/security-scanning.md) with:
+
+- Detailed scanner explanations
+- Remediation strategies
+- Understanding scan results
+- CI/CD integration
+- Best practices
+- Compliance considerations
+
+---
 
 - 📖 **Documentation**: https://docs.openstack.org/kolla/latest/
 - 💬 **IRC**: #openstack-kolla on OFTC
