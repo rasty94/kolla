@@ -63,6 +63,54 @@ find /var -type f -name '*.log' -delete 2>/dev/null || true \
     && {{ cleanup_logs() }}
 {%- endmacro %}
 
+{# BuildKit Cache Mount Macros - For faster builds #}
+
+{% macro cache_mount_apt() -%}
+--mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked
+{%- endmacro %}
+
+{% macro cache_mount_yum() -%}
+--mount=type=cache,target=/var/cache/yum,sharing=locked
+{%- endmacro %}
+
+{% macro cache_mount_dnf() -%}
+--mount=type=cache,target=/var/cache/dnf,sharing=locked
+{%- endmacro %}
+
+{% macro cache_mount_pip() -%}
+--mount=type=cache,target=/root/.cache/pip,sharing=locked
+{%- endmacro %}
+
+{% macro cache_mount_npm() -%}
+--mount=type=cache,target=/root/.npm,sharing=locked
+{%- endmacro %}
+
+{% macro install_packages_cached(packages, chain=False, clean=clean_package_cache) -%}
+{# Install packages with BuildKit cache mounts for faster builds #}
+{% if packages is defined and packages|length > 0 -%}
+    {% if not chain -%} RUN {% endif -%}
+    {%- if base_package_type == 'rpm' -%}
+        {{ cache_mount_yum() }} {{ distro_package_manager }} -y install {{ packages | join(' ') }}
+        {%- if clean %} \
+    && {{ distro_package_manager }} clean all && rm -rf /var/cache/{{ distro_package_manager }}{% endif -%}
+    {%- elif base_package_type == 'deb' -%}
+        {{ cache_mount_apt() }} {{ debian_package_install(packages, clean) }}
+    {%- endif %}
+{%- endif %}
+{%- endmacro %}
+
+{% macro install_pip_cached(packages, constraints=true, python_version='3') %}
+{# Install pip packages with BuildKit cache mount #}
+{%- if packages is sequence and packages|length > 0 -%}
+    {{ cache_mount_pip() }} python{{ python_version }} -m pip --no-cache-dir install --upgrade{{ ' ' }}
+    {%- if constraints %}-c /requirements/upper-constraints.txt {% endif -%}
+    {{ packages | join(' ') }}
+{%- else -%}
+    true
+{%- endif -%}
+{% endmacro %}
+
 {% macro configure_user(name, groups=None, shell=None, homedir=None) %}
 {%- if name not in users %}
 {{ raise_error("Failed to find configuration for '" + name + "' user. Try specifying '" + name + "-user' config section.") }}

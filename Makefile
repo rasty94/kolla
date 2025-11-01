@@ -191,6 +191,103 @@ security:  ## Run security checks
 	bandit -r kolla/ -ll
 	safety check --json || true
 
+security-scan:  ## Scan image for vulnerabilities with Trivy (usage: make security-scan IMAGE=base)
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "❌ Error: IMAGE variable required"; \
+		echo "Usage: make security-scan IMAGE=<image-name>"; \
+		exit 1; \
+	fi
+	@if ! command -v trivy &> /dev/null; then \
+		echo "❌ Trivy not installed"; \
+		echo "Install: https://aquasecurity.github.io/trivy/latest/getting-started/installation/"; \
+		exit 1; \
+	fi
+	@echo "🔒 Scanning kolla/$(IMAGE):latest for vulnerabilities..."
+	@trivy image --severity CRITICAL,HIGH,MEDIUM kolla/$(IMAGE):latest
+
+security-scan-full:  ## Full security scan with all scanners (usage: make security-scan-full IMAGE=base)
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "❌ Error: IMAGE variable required"; \
+		exit 1; \
+	fi
+	@echo "🔒 Running comprehensive security scan..."
+	@echo ""
+	@echo "1️⃣  Trivy scan..."
+	@$(MAKE) security-scan IMAGE=$(IMAGE) || true
+	@echo ""
+	@echo "2️⃣  Grype scan..."
+	@if command -v grype &> /dev/null; then \
+		grype kolla/$(IMAGE):latest; \
+	else \
+		echo "⚠️  Grype not installed (optional)"; \
+	fi
+	@echo ""
+	@echo "3️⃣  SBOM generation..."
+	@$(MAKE) generate-sbom IMAGE=$(IMAGE) || true
+
+scan-image:  ## Alias for security-scan
+	@$(MAKE) security-scan IMAGE=$(IMAGE)
+
+generate-sbom:  ## Generate Software Bill of Materials (usage: make generate-sbom IMAGE=base)
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "❌ Error: IMAGE variable required"; \
+		exit 1; \
+	fi
+	@if ! command -v syft &> /dev/null; then \
+		echo "❌ Syft not installed"; \
+		echo "Install: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin"; \
+		exit 1; \
+	fi
+	@echo "📦 Generating SBOM for kolla/$(IMAGE):latest..."
+	@syft kolla/$(IMAGE):latest -o spdx-json > sbom-$(IMAGE).spdx.json
+	@syft kolla/$(IMAGE):latest -o cyclonedx-json > sbom-$(IMAGE).cyclonedx.json
+	@echo "✅ SBOM generated:"
+	@echo "   - sbom-$(IMAGE).spdx.json"
+	@echo "   - sbom-$(IMAGE).cyclonedx.json"
+
+security-report:  ## Generate security report for all images
+	@echo "🛡️  Security Report for Kolla Images"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@if ! command -v trivy &> /dev/null; then \
+		echo "❌ Trivy required for security reports"; \
+		exit 1; \
+	fi
+	@for image in $$(docker images 'kolla/*' --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>'); do \
+		echo ""; \
+		echo "Scanning: $$image"; \
+		trivy image --severity CRITICAL,HIGH --quiet $$image | head -20 || true; \
+	done
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+install-security-tools:  ## Install security scanning tools
+	@echo "🔧 Installing security tools..."
+	@echo ""
+	@echo "1️⃣  Installing Trivy..."
+	@if ! command -v trivy &> /dev/null; then \
+		wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add - && \
+		echo "deb https://aquasecurity.github.io/trivy-repo/deb $$(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list && \
+		sudo apt-get update && sudo apt-get install -y trivy; \
+	else \
+		echo "   ✅ Trivy already installed"; \
+	fi
+	@echo ""
+	@echo "2️⃣  Installing Syft..."
+	@if ! command -v syft &> /dev/null; then \
+		curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin; \
+	else \
+		echo "   ✅ Syft already installed"; \
+	fi
+	@echo ""
+	@echo "3️⃣  Installing Grype (optional)..."
+	@if ! command -v grype &> /dev/null; then \
+		curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin; \
+	else \
+		echo "   ✅ Grype already installed"; \
+	fi
+	@echo ""
+	@echo "✅ Security tools installed!"
+
 # Dependency management
 
 check-deps:  ## Check for outdated dependencies
@@ -273,3 +370,96 @@ compare-images:  ## Compare sizes between two images
 total-image-size:  ## Calculate total size of all Kolla images
 	@echo "Total size of all Kolla images:"
 	@docker images 'kolla/*' --format "{{.Size}}" | sed 's/GB/*1024/;s/MB//;s/KB/\/1024/' | paste -sd+ | bc | awk '{printf "%.2f GB\n", $$1/1024}'
+
+# Build cache optimization targets
+
+build-cached:  ## Build image with BuildKit cache (usage: make build-cached IMAGE=base)
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "❌ Error: IMAGE variable required"; \
+		echo "Usage: make build-cached IMAGE=<image-name>"; \
+		echo "Example: make build-cached IMAGE=base"; \
+		exit 1; \
+	fi
+	@echo "🚀 Building $(IMAGE) with BuildKit cache..."
+	@export DOCKER_BUILDKIT=1; \
+	docker buildx build \
+		--file docker/$(IMAGE)/Dockerfile.j2 \
+		--tag kolla/$(IMAGE):cached \
+		--cache-from type=local,src=/tmp/buildx-cache-$(IMAGE) \
+		--cache-to type=local,dest=/tmp/buildx-cache-$(IMAGE),mode=max \
+		--load \
+		.
+	@echo "✅ Build complete: kolla/$(IMAGE):cached"
+
+build-cached-multi:  ## Build multiple images with cache (usage: make build-cached-multi IMAGES="base,openstack-base,nova-compute")
+	@if [ -z "$(IMAGES)" ]; then \
+		IMAGES="base,openstack-base,nova-compute,neutron-server,keystone"; \
+	fi; \
+	echo "🚀 Building images with cache: $$IMAGES"; \
+	IFS=',' read -ra IMAGE_LIST <<< "$$IMAGES"; \
+	for img in "$${IMAGE_LIST[@]}"; do \
+		echo ""; \
+		echo "Building $$img..."; \
+		$(MAKE) build-cached IMAGE=$$img || true; \
+	done; \
+	echo ""; \
+	echo "✅ All builds complete!"
+
+clean-cache:  ## Clean BuildKit cache
+	@echo "🧹 Cleaning BuildKit cache..."
+	@rm -rf /tmp/buildx-cache-* 2>/dev/null || true
+	@docker buildx prune -f
+	@echo "✅ Cache cleaned"
+
+cache-stats:  ## Show cache statistics
+	@echo "📊 BuildKit Cache Statistics"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@if [ -d /tmp/buildx-cache-* ]; then \
+		echo "Local cache directories:"; \
+		du -sh /tmp/buildx-cache-* 2>/dev/null | sed 's|/tmp/buildx-cache-||' | awk '{printf "  %-20s %s\n", $$2, $$1}'; \
+		echo ""; \
+		echo "Total local cache size:"; \
+		du -sh /tmp/buildx-cache-* 2>/dev/null | awk '{sum+=$$1} END {print "  " sum " MB"}'; \
+	else \
+		echo "  No local cache found"; \
+	fi
+	@echo ""
+	@echo "Docker build cache:"
+	@docker buildx du 2>/dev/null || echo "  (buildx not available)"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+cache-benchmark:  ## Benchmark build with and without cache
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "❌ Error: IMAGE variable required"; \
+		echo "Usage: make cache-benchmark IMAGE=<image-name>"; \
+		exit 1; \
+	fi
+	@echo "⏱️  Benchmarking build performance for $(IMAGE)"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "1️⃣  Cold build (no cache)..."
+	@$(MAKE) clean-cache > /dev/null 2>&1
+	@TIME_START=$$(date +%s); \
+	$(MAKE) build-cached IMAGE=$(IMAGE) > /dev/null 2>&1; \
+	TIME_END=$$(date +%s); \
+	COLD_TIME=$$((TIME_END - TIME_START)); \
+	echo "   Cold build time: $${COLD_TIME}s"
+	@echo ""
+	@echo "2️⃣  Warm build (with cache)..."
+	@TIME_START=$$(date +%s); \
+	$(MAKE) build-cached IMAGE=$(IMAGE) > /dev/null 2>&1; \
+	TIME_END=$$(date +%s); \
+	WARM_TIME=$$((TIME_END - TIME_START)); \
+	echo "   Warm build time: $${WARM_TIME}s"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+setup-buildx:  ## Setup Docker Buildx for caching
+	@echo "🔧 Setting up Docker Buildx..."
+	@docker buildx create --name kolla-builder --driver docker-container --use 2>/dev/null || \
+		docker buildx use kolla-builder 2>/dev/null || \
+		echo "Buildx already configured"
+	@docker buildx inspect --bootstrap
+	@echo "✅ Buildx ready for cached builds"
