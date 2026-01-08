@@ -32,9 +32,9 @@ DEFAULT_BASE_TAGS = {
 }
 # NOTE(hrw): has to match PRETTY_NAME in /etc/os-release
 DISTRO_PRETTY_NAME = {
-    'centos': 'CentOS Stream 9',
+    'centos': 'CentOS Stream {9,10}',
     'debian': 'Debian GNU/Linux 12 (bookworm)',
-    'rocky': 'Rocky Linux 9.* (Blue Onyx)',
+    'rocky': 'Rocky Linux {9,10}.* ({Blue Onyx,Red Quartz})',
     'ubuntu': 'Ubuntu 24.04.* LTS',
 }
 OPENSTACK_RELEASE = '2025.1'
